@@ -7,7 +7,7 @@
 //
 
 import UIKit
-class Helpers {
+class Helpers : UIViewController{
     
    static func getImageFromURL(url:String,image:UIImageView) {
         if let imageUrl = URL(string: url){
@@ -16,6 +16,8 @@ class Helpers {
             }
         }
     }
+    
+   
 }
 
 

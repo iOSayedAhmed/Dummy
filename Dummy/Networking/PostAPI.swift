@@ -13,17 +13,26 @@ import SwiftyJSON
 class PostAPI : API {
   
     
-  static  func getAllPosts(completionHandler: @escaping ([Post])->()) {
-        let url = "\(baseURL)/post"
+    static  func getAllPosts(page:Int,tag:String?,completionHandler: @escaping ([Post],Int)->()) {
+        var url = "\(baseURL)/post"
+        if let tag = tag?.trimmingCharacters(in: .whitespaces) {
+             url = "\(baseURL)/tag/\(tag)/post"
+         }
+        let params = [
+            "page":"\(page)",
+            "limit":"5"
+        ]
         
         
-        AF.request(url,headers: headers ).responseJSON { (response) in
+        
+        AF.request(url,parameters: params,encoder: URLEncodedFormParameterEncoder.default,headers: headers ).responseJSON { (response) in
             let jsonData = JSON(response.value)
             let data = jsonData["data"]
+            let total = jsonData["total"].intValue
             let decoder = JSONDecoder()
             do {
                 let post = try decoder.decode([Post].self, from: data.rawData())
-                completionHandler(post)
+                completionHandler(post,total)
                 
             } catch {
                 print(error.localizedDescription)
@@ -36,7 +45,7 @@ class PostAPI : API {
     static func getAllPostComments(postId:String,completionHandler: @escaping ([Comment])->()) {
                 let url = "\(baseURL)/post/\(postId)/comment"
                 let headers : HTTPHeaders = [
-                    "app-id":"62036cf6322f55adfd3ba956"
+                    "app-id": appID
                 ]
             AF.request(url,headers: headers).responseJSON { response in
                    
@@ -44,12 +53,55 @@ class PostAPI : API {
                     let data = jsonData["data"]
                         let decoder = JSONDecoder()
                         do {
-                            let comments = try decoder.decode([Comment].self, from: try! data.rawData())
+                            let comments = try decoder.decode([Comment].self, from: data.rawData())
                             completionHandler(comments)
                         }catch let error {
                             print(error.localizedDescription)
                         }
                 }
+    }
+    
+    //MARK:- Create New Comment
+    
+    static func createNewCommment(postId:String, userId:String,message:String , completionHandler: @escaping ()->()) {
+        let url = "\(baseURL)/comment/create"
+        let params = [
+            "post":postId,
+            "owner":userId,
+            "message":message
+        ]
+        AF.request(url,method: .post,parameters: params, encoder: JSONParameterEncoder.default,headers: headers).validate().responseJSON { response in
+            
+            switch response.result {
+            case .success :
+                completionHandler()
+            case .failure :
+                completionHandler()
+            }
+            
+        }
+        
+    }
+    
+    
+    static func createNewPost(imageURL:String ,text:String,userId:String, completionHandler: @escaping ()->()) {
+        let url = "\(baseURL)/post/create"
+        let params = [
+            "text":text,
+            "owner":userId,
+            "image":imageURL
+        ]
+        AF.request(url,method: .post,parameters: params, encoder: JSONParameterEncoder.default,headers: headers).validate().responseJSON { response in
+            
+            switch response.result {
+            case .success :
+                completionHandler()
+            case .failure :
+                completionHandler()
+            }
+            
+        }
+        
     }
 }
 

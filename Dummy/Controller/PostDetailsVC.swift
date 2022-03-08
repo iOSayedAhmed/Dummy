@@ -16,9 +16,15 @@ class PostDetailsVC: UIViewController {
     
     //MARK:- OUTLET
     
+    @IBOutlet weak var addCommentSV: UIStackView!
+    @IBOutlet weak var commentTextField: UITextField!
     @IBOutlet weak var activityIndicatorView: NVActivityIndicatorView!
     @IBOutlet weak var commentTableView: UITableView!
-    @IBOutlet weak var userNameLabel: UILabel!
+    @IBOutlet weak var userNameLabel: UILabel!{
+        didSet{
+            userImageView.layer.cornerRadius = userImageView.frame.size.width / 2
+        }
+    }
     @IBOutlet weak var userImageView: UIImageView!
     @IBOutlet weak var PostTextLabel: UILabel!
     @IBOutlet weak var PostImageView: UIImageView!
@@ -32,9 +38,9 @@ class PostDetailsVC: UIViewController {
         PostTextLabel.text = post.text
         userNameLabel.text = post.owner.firstName + " " + post.owner.lastName
         postLikesLabel.text = String(post.likes)
-        if let userImage = userImageView
+        if let userImage = userImageView , let picture = post.owner.picture
         {
-            Helpers.getImageFromURL(url: post.owner.picture, image: userImage)
+                Helpers.getImageFromURL(url: picture, image: userImage)
         }
         if let postImage = PostImageView
                {
@@ -43,8 +49,15 @@ class PostDetailsVC: UIViewController {
         // Configure ActitvityIndecator (Loader )
         activityIndicatorView.color = #colorLiteral(red: 0.2588235294, green: 0.6235294118, blue: 0.6666666667, alpha: 1)
         activityIndicatorView.type = .ballPulseSync
-        activityIndicatorView.startAnimating()
         //Getting Post Comments from API
+        getAllComments()
+    }
+    
+    func getAllComments() {
+        if UserManager.loggedInUser == nil {
+            addCommentSV.isHidden = true
+        }
+        activityIndicatorView.startAnimating()
         PostAPI.getAllPostComments(postId: post.id) { commentResponce in
             self.comments = commentResponce
             self.commentTableView.reloadData()
@@ -52,31 +65,25 @@ class PostDetailsVC: UIViewController {
         }
     }
     
-    //MARK:- Functions
-//
-//    func getAllPostComments() {
-//        let url = "https://dummyapi.io/data/v1/post/\(post.id)/comment"
-//        let headers : HTTPHeaders = [
-//            "app-id":"62036cf6322f55adfd3ba956"
-//        ]
-//        AF.request(url,headers: headers).responseJSON { response in
-//            self.activityIndicatorView.stopAnimating()
-//             let jsonData = JSON(response.value)
-//            let data = jsonData["data"]
-//                let decoder = JSONDecoder()
-//                do {
-//                    self.comments = try decoder.decode([Comment].self, from: try! data.rawData())
-//
-//                    self.commentTableView.reloadData()
-//
-//                }catch let error {
-//                    print(error.localizedDescription)
-//                }
-//
-//        }
-//
-//    }
-
+    
+    //MARK:- IBACTIONS
+    @IBAction func backButtonClicked(_ sender: UIButton) {
+        dismiss(animated: true, completion: nil)
+    }
+    
+    @IBAction func sendCommentClicked(_ sender: UIButton) {
+        if let comment = commentTextField.text  {
+            if let user = UserManager.loggedInUser?.id{
+                PostAPI.createNewCommment(postId: post.id, userId: user, message: comment) {
+                    self.getAllComments()
+                    self.commentTextField.text = ""
+                    
+                }
+            }
+            
+        }
+    }
+    
 }
 extension PostDetailsVC : UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -88,7 +95,11 @@ extension PostDetailsVC : UITableViewDelegate, UITableViewDataSource {
         cell.userNameLabel.text = comments[indexPath.row].owner.firstName + " " + comments[indexPath.row].owner.lastName
         cell.commentMessageLabel.text = comments[indexPath.row].message
         if let userImage = cell.userImageView {
-            Helpers.getImageFromURL(url: comments[indexPath.row].owner.picture, image: userImage)
+            if let image = comments[indexPath.row].owner.picture
+            {
+                Helpers.getImageFromURL(url:image , image: userImage)
+            }
+            
         }
             
        

@@ -14,4 +14,5 @@ struct Post: Decodable {
     var text:String
     var likes:Int
     var owner: User
+    var tags:[String]?
 }

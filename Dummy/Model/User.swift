@@ -12,7 +12,7 @@ struct User: Decodable {
     var id: String
     var firstName:String
     var lastName: String
-    var picture:String
+    var picture:String?
     var email:String?
     var phone:String?
     var dateOfBirth: String?
