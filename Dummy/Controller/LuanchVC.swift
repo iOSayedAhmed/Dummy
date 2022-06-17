@@ -16,7 +16,7 @@ class LuanchVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupAnimation()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
             let vc = self.storyboard?.instantiateViewController(identifier: "SignInUserVC") as! SignInUserVC
             vc.modalPresentationStyle = .fullScreen
             vc.modalTransitionStyle = .crossDissolve

@@ -63,15 +63,19 @@ class PostsVC: UIViewController {
             loggedUserNameLabel.isHidden = true
         }
          
-        //Getting Posts from API
-            getPosts()
+        
         
         //Subscribing in userStackView Notification
         
-        NotificationCenter.default.addObserver(self, selector: #selector(userStackViewTapped), name: NSNotification.Name.init("userStackViewTapped"), object: nil)
+//        NotificationCenter.default.addObserver(self, selector: #selector(userStackViewTapped), name: NSNotification.Name.init("userStackViewTapped"), object: nil)
        //Subscribing in NewPostAdded Notification
         NotificationCenter.default.addObserver(self, selector: #selector(newPostAdded), name: NSNotification.Name("newPostAdded"), object: nil)
        
+    }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        //Getting Posts from API
+        getPosts()
     }
     //MARK:- IBACTIONS
     
@@ -114,16 +118,25 @@ class PostsVC: UIViewController {
     
     func getPosts()  {
         self.activityIndicatorView.startAnimating()
-        PostAPI.getAllPosts(page: page, tag: tag) { postResponse,total  in
-             self.total = total
-            self.posts.append(contentsOf: postResponse)
-            self.postTableView.reloadData()
-            self.activityIndicatorView.stopAnimating()
+        DispatchQueue.global(qos: .background).async {
+            PostAPI.getAllPosts(page: self.page, tag: self.tag) { (postsResponse: [Post]?, total) in
+                self.total = total
+                if let posts = postsResponse {
+                   self.posts.append(contentsOf: posts)
+                }
+                DispatchQueue.main.async {
+                    self.postTableView.reloadData()
+                    self.activityIndicatorView.stopAnimating()
+                }
+            }
+
         }
+        
     }
 }
 
 extension  PostsVC : UITableViewDelegate, UITableViewDataSource,UIScrollViewDelegate {
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         posts.count
     }
@@ -131,24 +144,16 @@ extension  PostsVC : UITableViewDelegate, UITableViewDataSource,UIScrollViewDele
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PostCell", for: indexPath) as! PostCell
         let post = posts[indexPath.row]
-
-
-        cell.postImageView.setImageFromStringUrl(stringUrl: post.image)
         
-//        if let userImage = cell.userImageView {
-//            Helpers.getImageFromURL(url: post.owner.picture, image: userImage)
-//        }
-        if let picture = post.owner.picture{
+        //Step -5 confirm Protocol
+        cell.userProfile = self
+        
+        if let picture = post.owner.picture {
             cell.userImageView.setImageFromStringUrl(stringUrl: picture)
+            cell.postImageView.setImageFromStringUrl(stringUrl: post.image)
+            cell.ConfigerPostCell(userName: post.owner.firstName + " " + post.owner.lastName, postText: post.text,  likesNumber:String(post.likes))
         }
-        
-        cell.userNameLabel.text = post.owner.firstName + " " + post.owner.lastName
-        cell.postTextLabel.text = post.text
-        cell.likesLabel.text = String(post.likes)
-        cell.tags = post.tags ?? []
-       
-        
-        
+ 
         return cell
     }
     
@@ -163,18 +168,18 @@ extension  PostsVC : UITableViewDelegate, UITableViewDataSource,UIScrollViewDele
         present(vc, animated: true)
     }
     
-    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        if indexPath.row == posts.count - 1 && posts.count < total{
-            page = page + 1
-            self.getPosts()
-            print(indexPath.row)
-            
+//    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+//        if indexPath.row == posts.count - 1 && posts.count < total{
+//            page = page + 1
+//            self.getPosts()
+//            print(indexPath.row)
+//
+//
+//
+//        }
 
 
-        }
-
-
-    }
+    
 //    func scrollViewDidScroll(_ scrollView: UIScrollView) {
 //        let scroll = scrollView.contentOffset.y
 //        if scroll > (postTableView.contentSize.height - 100 - scrollView.frame.size.height) && posts.count < total{
@@ -184,7 +189,36 @@ extension  PostsVC : UITableViewDelegate, UITableViewDataSource,UIScrollViewDele
 //
 //        }
 //    }
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if scrollView == postTableView {
+           
+            if (scrollView.contentOffset.y + scrollView.frame.size.height ) >= (scrollView.contentSize.height)  {
+
+                                page = page + 1
+                                self.getPosts()
+            }
+        }
+        
+    }
 }
+
+//Step -4
+extension PostsVC : UserProfileProtocol {
+    func cellSelected(cell: UITableViewCell) {
+        
+        if let cell = cell as? UITableViewCell {
+            if let indexPath = postTableView.indexPath(for: cell)  {
+                let post = posts[indexPath.row]
+                let vc = storyboard?.instantiateViewController(identifier: "UserProfileVC") as! UserProfileVC
+                vc.user = post.owner
+                print("Success Delegate ")
+                present(vc, animated: true)
+            }
+        }
+    }
+}
+    
+
 
     
 

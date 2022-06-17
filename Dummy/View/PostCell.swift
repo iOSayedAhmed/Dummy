@@ -8,8 +8,9 @@
 
 import UIKit
 
-protocol UserProfileDelegate {
-    func cellSelected(cellIndex:UITableViewCell)
+//step -1
+protocol UserProfileProtocol {
+    func cellSelected(cell:UITableViewCell)
    }
 class PostCell: UITableViewCell {
 
@@ -21,7 +22,9 @@ class PostCell: UITableViewCell {
             postTagCollectionView.register(UINib(nibName: "postTagCell", bundle: nil), forCellWithReuseIdentifier: "postTagCell")
         }
     }
-    var userProfile : UserProfileDelegate?
+    //step -2
+    var userProfile : UserProfileProtocol?
+    
     @IBOutlet weak var userNameLabel: UILabel!
     @IBOutlet weak var postTextLabel: UILabel!
     @IBOutlet weak var postImageView: UIImageView!
@@ -44,11 +47,20 @@ class PostCell: UITableViewCell {
 
     }
     
+    func ConfigerPostCell(userName:String,postText:String,likesNumber:String) {
+        self.userNameLabel.text = userName
+        self.postTextLabel.text = postText
+        self.likesLabel.text = likesNumber
+    }
+    
     @objc func userStackViewTapped() {
        //  To Present userProfileVC Should send Notificaton to PostVC And Present userProfileVC From There
 
-        NotificationCenter.default.post(name: NSNotification.Name.init("userStackViewTapped"), object: nil, userInfo: ["cell":self])
-        //userProfile?.cellSelected(cellIndex: self)
+//        NotificationCenter.default.post(name: NSNotification.Name.init("userStackViewTapped"), object: nil, userInfo: ["cell":self])
+        
+        
+        // step -3
+        userProfile?.cellSelected(cell: self)
         
     }
 }

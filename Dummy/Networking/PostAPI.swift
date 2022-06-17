@@ -13,7 +13,7 @@ import SwiftyJSON
 class PostAPI : API {
   
     
-    static  func getAllPosts(page:Int,tag:String?,completionHandler: @escaping ([Post],Int)->()) {
+    static  func getAllPosts <T:Decodable>(page:Int,tag:String?,completionHandler: @escaping ([T]?,Int)->()) {
         var url = "\(baseURL)/post"
         if let tag = tag?.trimmingCharacters(in: .whitespaces) {
              url = "\(baseURL)/tag/\(tag)/post"
@@ -31,7 +31,7 @@ class PostAPI : API {
             let total = jsonData["total"].intValue
             let decoder = JSONDecoder()
             do {
-                let post = try decoder.decode([Post].self, from: data.rawData())
+                let post = try decoder.decode([T].self, from: data.rawData())
                 completionHandler(post,total)
                 
             } catch {
